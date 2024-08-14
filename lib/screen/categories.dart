@@ -1,50 +1,29 @@
-import 'dart:math';
-
 import 'package:flutter/material.dart';
 import 'package:flutter_application_test/screen/start.dart';
+import 'package:flutter_application_test/shared/my_app_state.dart';
+import 'package:provider/provider.dart';
 
 class Categories extends StatelessWidget {
-  final List<String> categoriesList = [
-    'Países',
-    'Objetos',
-    'Animais',
-    'Cores',
-    'Alimentos',
-    'Nome',
-    'Profissão',
-    'Marcas'
-  ];
-  var intValue = Random().nextInt(8);
   @override
   Widget build(BuildContext context) {
+    var appState = context.watch<MyAppState>();
     return Scaffold(
       appBar: AppBar(
         title: const Text('Categorias'),
-        // actions: <Widget>[
-        //   IconButton(
-        //     icon: const Icon(Icons.add_alert),
-        //     tooltip: 'Show Snackbar',
-        //     onPressed: () {
-        //       ScaffoldMessenger.of(context).showSnackBar(
-        //           const SnackBar(content: Text('This is a snackbar')));
-        //     },
-        //   ),
-        // ],
       ),
       body: Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: <Widget>[
             Text(
-              categoriesList[intValue],
+              appState.categoriesList[appState.intValue],
               style: const TextStyle(fontSize: 24),
             ),
             IconButton(
               icon: const Icon(Icons.refresh),
               tooltip: 'Mudar categoria',
               onPressed: () {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(content: Text('Implementar a mudança de categoria')));
+                appState.regenerateValue();
               },
             ),
           ],
@@ -54,7 +33,7 @@ class Categories extends StatelessWidget {
         onPressed: () {
           Navigator.of(context).push(
             MaterialPageRoute(
-              builder: (context) => Start(category: categoriesList[intValue]),
+              builder: (context) => Start(),
             ),
           );
         },

@@ -1,10 +1,12 @@
+import 'dart:async';
+
+import 'package:audioplayers/audioplayers.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/rendering.dart';
+import 'package:flutter/services.dart';
+import 'package:flutter_application_test/shared/my_app_state.dart';
+import 'package:provider/provider.dart';
 
 class Start extends StatelessWidget {
-  Start({required this.category});
-  final String category;
-
   final List<String> alphabetTop = [
     'a',
     'b',
@@ -15,7 +17,7 @@ class Start extends StatelessWidget {
     'g',
     'h',
     'i',
-    'j'
+    'j',
   ];
   final List<String> alphabetBottom = [
     'l',
@@ -27,32 +29,38 @@ class Start extends StatelessWidget {
     's',
     't',
     'u',
-    'v'
+    'v',
   ];
   @override
   Widget build(BuildContext context) {
+    var appState = context.watch<MyAppState>();
     return Scaffold(
-        appBar: AppBar(
-          title: const Text('NOME DA CATEGORIA'),
-          actions: <Widget>[
-            IconButton(
-              icon: const Icon(Icons.add_alert),
-              tooltip: 'Show Snackbar',
-              onPressed: () {
-                ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content: Text('This is a snackbar')));
-              },
-            ),
-          ],
+      appBar: AppBar(
+        title: Text(appState.categoriesList[appState.intValue]),
+        actions: <Widget>[
+          IconButton(
+            icon: const Icon(Icons.add_alert),
+            tooltip: 'Show Snackbar',
+            onPressed: () {
+              ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(content: Text('This is a snackbar')));
+            },
+          ),
+        ],
+      ),
+      body: SingleChildScrollView(
+        child: Container(
+          height: 600,
+          child: Column(
+            children: [
+              GridOfButtons(alphabet: alphabetTop),
+              ButtonsStop(),
+              GridOfButtons(alphabet: alphabetBottom),
+            ],
+          ),
         ),
-        body: SingleChildScrollView(
-            child: Container(
-                height: 600,
-                child: Column(children: [
-                  GridOfButtons(alphabet: alphabetTop),
-                  ButtonsStop(),
-                  GridOfButtons(alphabet: alphabetBottom),
-                ]))));
+      ),
+    );
   }
 }
 
@@ -62,6 +70,7 @@ class GridOfButtons extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    var appState = context.watch<MyAppState>();
     return Container(
       height: 200,
       padding: const EdgeInsets.all(8.0),
@@ -76,13 +85,24 @@ class GridOfButtons extends StatelessWidget {
         itemBuilder: (context, index) {
           return ElevatedButton(
             style: ElevatedButton.styleFrom(
-                primary: Color.fromARGB(189, 112, 63, 148), // Cor de fundo do botão
-              ),
-            onPressed: () {
-              // Define button action here
-              print('Button ${alphabet[index + 1]} pressed');
-            },
-            child: Text(alphabet[index].toUpperCase(),style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: Colors.white),),
+                primary: appState.selectedLetter == alphabet[index]
+                    ? Colors.red
+                    : const Color.fromARGB(
+                        189, 112, 63, 148), // Cor de fundo do botão,
+                minimumSize: const Size(50, 50),
+                maximumSize: const Size(200, 100)),
+            onPressed: !appState.selectedLetters.contains(alphabet[index])
+                ? () {
+                    appState.setLetter(alphabet[index]);
+                  }
+                : null,
+            child: Text(
+              alphabet[index].toUpperCase(),
+              style: const TextStyle(
+                  fontWeight: FontWeight.bold,
+                  fontSize: 16,
+                  color: Colors.white),
+            ),
           );
         },
       ),
@@ -90,42 +110,158 @@ class GridOfButtons extends StatelessWidget {
   }
 }
 
-class ButtonsStop extends StatelessWidget {
+class ButtonsStop extends StatefulWidget {
+  @override
+  State<ButtonsStop> createState() => _ButtonsStopState();
+}
+
+class _ButtonsStopState extends State<ButtonsStop> {
+  final AudioPlayer _audioPlayer = AudioPlayer();
+  bool _isButtonDisabled = false;
+  int _remainingTime = 10;
+  Timer? _timer;
+  bool gameOver = false;
+
+  void _startTimer(BuildContext context, MyAppState appState) {
+    setState(() {
+      _isButtonDisabled = true;
+      _remainingTime = 10;
+    });
+    _startTimerSound();
+    _timer = Timer.periodic(const Duration(seconds: 1), (timer) {
+      setState(() {
+        if (_remainingTime > 0) {
+          _remainingTime--;
+        } else {
+          _timer?.cancel();
+          _isButtonDisabled = false;
+          appState.clearSelectedsLetters();
+          _gameOverSound();
+          showGameOverModal(context);
+        }
+      });
+    });
+  }
+
+  void _restartTimer(BuildContext context, MyAppState appState) {
+    _timer?.cancel();
+    _startTimer(context, appState);
+  }
+
+  void _startTimerSound() async {
+    await _audioPlayer.play('assets/effects/timer-click-track.mp3');
+  }
+
+  void _gameOverSound() {
+    gameOver = true;
+    _audioPlayer.play('assets/effects/alarm-clock.mp3');
+  }
+
+  @override
+  void dispose() {
+    _timer?.cancel();
+    _audioPlayer.dispose();
+    super.dispose();
+  }
+
   @override
   Widget build(BuildContext context) {
+    var appState = context.watch<MyAppState>();
     return Padding(
-      padding: EdgeInsets.all(32.0),
+      padding: const EdgeInsets.all(32.0),
       child: Row(mainAxisAlignment: MainAxisAlignment.center, children: [
-        IconButton(
-          icon: Icon(Icons.pause),
-          tooltip: 'Show Snackbar',
-          onPressed: () {
-            ScaffoldMessenger.of(context)
-                .showSnackBar(const SnackBar(content: Text('Pause button')));
-          },
-        ),
         SizedBox(
-            width: 100,
-            height: 100,
-            child: ElevatedButton(
-              style: ElevatedButton.styleFrom(
-                primary: Colors.red, // Cor de fundo do botão
-              ),
-              onPressed: () {
-                ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content: Text('Click button')));
-              },
-              child: const Text('10s', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18, color: Colors.white),),
-            )),
-        IconButton(
-          icon: const Icon(Icons.refresh),
-          tooltip: 'Show Snackbar',
-          onPressed: () {
-            ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(content: Text('Iniciar novamente')));
-          },
+          width: 100,
+          height: 100,
+          child: ElevatedButton(
+            style: ElevatedButton.styleFrom(
+              primary: Colors.red, // Cor de fundo do botão
+            ),
+            onPressed: ()  {
+              if (appState.selectedLetter != "") {
+                appState.selectLetter();
+                if(appState.selectedLetters.length == 20) {
+                  _audioPlayer.stop();
+                  appState.clearSelectedsLetters();
+                  _timer?.cancel();
+                 showEndRoundModal(context);
+                }
+                else {
+                  (_isButtonDisabled ? _restartTimer(context, appState) : _startTimer(context, appState));
+                }
+              }
+            },
+            child: Text(
+              '$_remainingTime s',
+              style: const TextStyle(
+                  fontWeight: FontWeight.bold,
+                  fontSize: 18,
+                  color: Colors.white),
+            ),
+          ),
         ),
       ]),
     );
   }
+
+  Future<dynamic> showGameOverModal(BuildContext context) {
+    return showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: const Text('GAME OVER'),
+          content: const Text(
+              'Você perdeu o jogo! Deseja escolher outra categoria ou voltar para o início?'),
+          actions: <Widget>[
+            TextButton(
+              child: const Text('Próxima categoria'),
+              onPressed: () {
+                Navigator.of(context).pop();
+                Navigator.of(context).pop();
+              },
+            ),
+            TextButton(
+              child: const Text('Inicio'),
+              onPressed: () {
+                Navigator.of(context).pop();
+                Navigator.of(context).pop();
+                Navigator.of(context).pop();
+                // SystemNavigator.pop();
+              },
+            ),
+          ],
+        );
+      },
+    );
+  }
 }
+
+  Future<dynamic> showEndRoundModal(BuildContext context) {
+    return showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: const Text('RODADA FINALIZADA'),
+          content: const Text(
+              'Deseja jogar novamente ou sair?'),
+          actions: <Widget>[
+            TextButton(
+              child: const Text('Próxima categoria'),
+              onPressed: () {
+                Navigator.of(context).pop();
+                Navigator.of(context).pop();
+              },
+            ),
+            TextButton(
+              child: const Text('Inicio'),
+              onPressed: () {
+                Navigator.of(context).pop();
+                Navigator.of(context).pop();
+                Navigator.of(context).pop();
+              },
+            ),
+          ],
+        );
+      },
+    );
+  }
