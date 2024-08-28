@@ -4,10 +4,12 @@ import 'package:flutter_application_test/shared/my_app_state.dart';
 import 'package:provider/provider.dart';
 
 void main() {
-  runApp(LetterLockApp());
+  runApp(const LetterLockApp());
 }
 
 class LetterLockApp extends StatelessWidget {
+  const LetterLockApp({super.key});
+
   @override
   Widget build(BuildContext context) {
     return ChangeNotifierProvider(

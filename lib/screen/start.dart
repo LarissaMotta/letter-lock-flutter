@@ -31,6 +31,8 @@ class Start extends StatelessWidget {
     'u',
     'v',
   ];
+
+  Start({super.key});
   @override
   Widget build(BuildContext context) {
     var appState = context.watch<MyAppState>();
@@ -50,11 +52,16 @@ class Start extends StatelessWidget {
       ),
       body: SingleChildScrollView(
         child: Container(
-          height: 600,
+          constraints: BoxConstraints(
+            maxHeight: MediaQuery.of(context).size.height-
+                MediaQuery.of(context).padding.top -
+                MediaQuery.of(context).padding.bottom,
+          ),
           child: Column(
+            mainAxisAlignment: MainAxisAlignment.spaceAround,
             children: [
               GridOfButtons(alphabet: alphabetTop),
-              ButtonsStop(),
+              const ButtonsStop(),
               GridOfButtons(alphabet: alphabetBottom),
             ],
           ),
@@ -65,14 +72,17 @@ class Start extends StatelessWidget {
 }
 
 class GridOfButtons extends StatelessWidget {
-  GridOfButtons({required this.alphabet});
+  const GridOfButtons({super.key, required this.alphabet});
   final List<String> alphabet;
 
   @override
   Widget build(BuildContext context) {
     var appState = context.watch<MyAppState>();
     return Container(
-      height: 200,
+      constraints: const BoxConstraints(
+        minHeight: 100, // Largura mínima
+        maxHeight: 250, // Largura máxima
+      ),
       padding: const EdgeInsets.all(8.0),
       child: GridView.builder(
         gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
@@ -111,6 +121,8 @@ class GridOfButtons extends StatelessWidget {
 }
 
 class ButtonsStop extends StatefulWidget {
+  const ButtonsStop({super.key});
+
   @override
   State<ButtonsStop> createState() => _ButtonsStopState();
 }
